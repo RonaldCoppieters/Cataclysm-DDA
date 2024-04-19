@@ -9,6 +9,7 @@
 #include <optional>
 #include <ostream>
 #include <queue>
+#include <regex>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -2538,10 +2539,18 @@ void repair_item_finish( player_activity *act, Character *you, bool no_menu )
             }
         }
 
-        title += string_format( _( "Charges: <color_light_blue>%s/%s</color> %s (%s per use)\n" ),
+        std::string charges_text = string_format( _( "Charges: <color_light_blue>%s/%s</color> %s (%s per use)\n" ),
                                 ammo_remaining, used_tool->ammo_capacity( current_ammo, true ),
                                 ammo_name,
                                 used_tool->ammo_required() );
+
+        if ( used_tool->is_tool() && used_tool->has_flag( flag_USES_NEARBY_AMMO ) ) {
+            // Remove "/capacity" from the "ammo/capacity" pattern, since the tool doesn't hold the ammo.
+            std::regex pattern( R"((\d+)/0)" );
+            charges_text = std::regex_replace( charges_text, pattern, "$1" );
+        }
+
+        title += charges_text;
         title += string_format( _( "Materials available: %s\n" ), string_join( material_list, ", " ) );
         title += string_format( _( "Skill used: <color_light_blue>%s (%s)</color>\n" ),
                                 actor->used_skill.obj().name(), level );
